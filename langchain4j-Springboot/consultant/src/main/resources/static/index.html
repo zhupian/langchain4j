@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 顾问助手</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: "Microsoft YaHei", Arial, sans-serif; background: linear-gradient(135deg, #eef4ff, #f9fbff); color: #1f2937; }
+        .container { max-width: 960px; margin: 0 auto; min-height: 100vh; padding: 32px 20px; display: flex; flex-direction: column; }
+        .header { text-align: center; margin-bottom: 24px; }
+        .header h1 { margin: 0 0 10px; font-size: 32px; }
+        .header p { margin: 0; color: #6b7280; }
+        .chat-panel { flex: 1; background: rgba(255,255,255,.92); border: 1px solid #e5e7eb; border-radius: 20px; box-shadow: 0 14px 40px rgba(15, 23, 42, .08); padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        .messages { flex: 1; min-height: 420px; max-height: 65vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; }
+        .message { max-width: 82%; padding: 14px 16px; border-radius: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+        .message.user { align-self: flex-end; background: #2563eb; color: #fff; border-bottom-right-radius: 6px; }
+        .message.bot { align-self: flex-start; background: #f3f4f6; color: #111827; border-bottom-left-radius: 6px; }
+        .composer { display: flex; gap: 12px; align-items: flex-end; }
+        .composer-actions { display: flex; flex-direction: column; gap: 12px; }
+        textarea { flex: 1; min-height: 88px; max-height: 180px; resize: vertical; border: 1px solid #d1d5db; border-radius: 14px; padding: 14px 16px; font-size: 15px; outline: none; }
+        textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+        button { min-width: 120px; height: 52px; border: none; border-radius: 14px; background: #2563eb; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: .2s; }
+        button:hover { background: #1d4ed8; transform: translateY(-1px); }
+        button:disabled { background: #93c5fd; cursor: not-allowed; transform: none; }
+        .secondary-button { background: #0f766e; }
+        .secondary-button:hover { background: #0d5f59; }
+        .secondary-button.recording { background: #dc2626; }
+        .secondary-button.recording:hover { background: #b91c1c; }
+        .tips { font-size: 13px; color: #6b7280; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .memory-id { font-family: Consolas, monospace; color: #2563eb; }
+        .speech-status { color: #0f766e; }
+        .speech-status.error { color: #dc2626; }
+        @media (max-width: 768px) {
+            .container { padding: 20px 14px; }
+            .header h1 { font-size: 26px; }
+            .message { max-width: 100%; }
+            .composer { flex-direction: column; }
+            .composer-actions { width: 100%; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>AI 顾问助手</h1>
+        <p>基于 Spring Boot + LangChain4j 的简洁聊天页面</p>
+    </div>
+
+    <div class="chat-panel">
+        <div id="messages" class="messages">
+            <div class="message bot">你好，我是你的 AI 顾问助手。请输入你想咨询的问题。</div>
+        </div>
+
+        <div class="tips">
+            <span>Enter 发送，Shift + Enter 换行，按住 Alt + R 说话</span>
+            <span>当前 memoryId：<span id="memoryIdText" class="memory-id"></span></span>
+            <span>识别语言：<span id="speechLangText">检测中...</span></span>
+            <span id="speechStatus" class="speech-status">语音识别准备中...</span>
+        </div>
+
+        <div class="composer">
+            <textarea id="messageInput" placeholder="例如：请帮我规划一个适合新手的 Java 学习路线"></textarea>
+            <div class="composer-actions">
+                <button id="speechButton" class="secondary-button" type="button">🎙 开始说话</button>
+                <button id="sendButton" type="button">发送消息</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('messageInput');
+    const speechButton = document.getElementById('speechButton');
+    const sendButton = document.getElementById('sendButton');
+    const memoryIdText = document.getElementById('memoryIdText');
+    const speechLangText = document.getElementById('speechLangText');
+    const speechStatus = document.getElementById('speechStatus');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognitionLanguage = (navigator.language || 'zh-CN').trim();
+    const recognitionSupported = typeof SpeechRecognition === 'function';
+
+    let recognition = null;
+    let isRecognizing = false;
+    let transcriptBaseText = '';
+    let recognizedFinalText = '';
+    let speechEndedWithError = false;
+    let shortcutSpeechPressed = false;
+
+    function createMemoryId() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            return window.crypto.randomUUID();
+        }
+        return `memory-${Date.now()}`;
+    }
+
+    const memoryId = localStorage.getItem('chat-memory-id') || createMemoryId();
+    localStorage.setItem('chat-memory-id', memoryId);
+    memoryIdText.textContent = memoryId;
+    speechLangText.textContent = recognitionLanguage;
+
+    function setSpeechStatus(text, isError = false) {
+        speechStatus.textContent = text;
+        speechStatus.classList.toggle('error', isError);
+    }
+
+    function updateSpeechButton() {
+        speechButton.textContent = isRecognizing ? '⏹ 停止识别' : '🎙 开始说话';
+        speechButton.classList.toggle('recording', isRecognizing);
+    }
+
+    function buildMergedText(baseText, transcriptText) {
+        const normalizedBase = baseText.trim();
+        const normalizedTranscript = transcriptText.trim();
+        if (!normalizedBase) {
+            return normalizedTranscript;
+        }
+        if (!normalizedTranscript) {
+            return normalizedBase;
+        }
+        return `${normalizedBase}\n${normalizedTranscript}`;
+    }
+
+    function stopRecognition() {
+        if (recognition && isRecognizing) {
+            recognition.stop();
+        }
+    }
+
+    function startRecognition() {
+        if (!recognitionSupported) {
+            setSpeechStatus('当前浏览器不支持语音识别，建议使用最新版 Chrome。', true);
+            return;
+        }
+        if (isRecognizing) {
+            return;
+        }
+        transcriptBaseText = input.value.trim();
+        recognizedFinalText = '';
+        speechEndedWithError = false;
+        try {
+            recognition.start();
+        } catch (error) {
+            setSpeechStatus(`无法启动语音识别：${error.message}`, true);
+        }
+    }
+
+    function toggleRecognition() {
+        if (isRecognizing) {
+            stopRecognition();
+            return;
+        }
+        startRecognition();
+    }
+
+    if (recognitionSupported) {
+        recognition = new SpeechRecognition();
+        recognition.lang = recognitionLanguage;
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+            isRecognizing = true;
+            updateSpeechButton();
+            setSpeechStatus('正在识别，请开始说话...');
+        };
+
+        recognition.onresult = (event) => {
+            let interimText = '';
+            for (let index = event.resultIndex; index < event.results.length; index += 1) {
+                const transcript = event.results[index][0].transcript;
+                if (event.results[index].isFinal) {
+                    recognizedFinalText += transcript;
+                } else {
+                    interimText += transcript;
+                }
+            }
+            input.value = buildMergedText(transcriptBaseText, `${recognizedFinalText} ${interimText}`);
+        };
+
+        recognition.onerror = (event) => {
+            isRecognizing = false;
+            speechEndedWithError = true;
+            updateSpeechButton();
+            const message = event.error === 'not-allowed'
+                ? '麦克风权限被拒绝，请允许浏览器访问麦克风。'
+                : `语音识别失败：${event.error}`;
+            setSpeechStatus(message, true);
+        };
+
+        recognition.onend = () => {
+            isRecognizing = false;
+            updateSpeechButton();
+            if (!speechEndedWithError) {
+                setSpeechStatus(recognizedFinalText.trim() ? '识别完成，已回填到输入框。' : '识别已停止，可以重新开始。');
+            }
+            speechEndedWithError = false;
+            input.focus();
+        };
+
+        setSpeechStatus('语音识别就绪，点击按钮或按住 Alt + R 开始。');
+    } else {
+        speechButton.disabled = true;
+        setSpeechStatus('当前浏览器不支持语音识别，建议使用最新版 Chrome。', true);
+    }
+
+    function appendMessage(content, role) {
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        div.textContent = content;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+        return div;
+    }
+
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text || sendButton.disabled) return;
+
+        stopRecognition();
+
+        appendMessage(text, 'user');
+        input.value = '';
+        sendButton.disabled = true;
+        speechButton.disabled = true;
+
+        const botMessage = appendMessage('思考中...', 'bot');
+
+        try {
+            const query = new URLSearchParams({ memoryId, message: text }).toString();
+            const response = await fetch(`/chat?${query}`);
+            if (!response.ok || !response.body) {
+                throw new Error(`请求失败：${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            botMessage.textContent = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                botMessage.textContent += decoder.decode(value, { stream: true });
+                messages.scrollTop = messages.scrollHeight;
+            }
+        } catch (error) {
+            botMessage.textContent = `请求出错：${error.message}`;
+        } finally {
+            sendButton.disabled = false;
+            speechButton.disabled = !recognitionSupported;
+            input.focus();
+        }
+    }
+
+    speechButton.addEventListener('click', toggleRecognition);
+    sendButton.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.repeat) {
+            return;
+        }
+        if (event.altKey && event.key.toLowerCase() === 'r') {
+            event.preventDefault();
+            shortcutSpeechPressed = true;
+            startRecognition();
+        }
+    });
+
+    document.addEventListener('keyup', (event) => {
+        const isSpeechShortcutKey = event.key.toLowerCase() === 'r' || event.key === 'Alt';
+        if (shortcutSpeechPressed && isSpeechShortcutKey) {
+            shortcutSpeechPressed = false;
+            stopRecognition();
+        }
+    });
+
+    window.addEventListener('blur', () => {
+        shortcutSpeechPressed = false;
+        stopRecognition();
+    });
+</script>
+</body>
+</html>

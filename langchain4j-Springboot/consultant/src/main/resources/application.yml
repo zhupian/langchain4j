@@ -1,0 +1,24 @@
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: ${API-KEY}
+      base-url: http://localhost:11434/v1
+      model-name: qwen3.5:0.8b
+      log-requests: true
+      log-responses: true
+    streaming-chat-model:
+      api-key: ${API-KEY}
+      base-url: http://localhost:11434/v1
+      model-name: qwen3.5:0.8b
+      log-requests: true
+      log-responses: true
+logging:
+  level:
+    dev.langchain4j: DEBUG
+spring:
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: 123456
+      database: 2
