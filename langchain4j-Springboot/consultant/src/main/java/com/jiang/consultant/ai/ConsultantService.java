@@ -1,4 +1,4 @@
-package com.jiang.consultant.aiservice;
+package com.jiang.consultant.ai;
 
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;

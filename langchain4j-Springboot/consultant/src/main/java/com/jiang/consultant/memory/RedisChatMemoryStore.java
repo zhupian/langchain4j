@@ -1,29 +1,34 @@
-package com.jiang.consultant.repository;
+package com.jiang.consultant.memory;
 
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ChatMessageDeserializer;
 import dev.langchain4j.data.message.ChatMessageSerializer;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Repository
-public class RedisChatMeoryStore implements ChatMemoryStore {
+@Component
+public class RedisChatMemoryStore implements ChatMemoryStore {
 
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    public RedisChatMemoryStore(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
 
     @Override
     public List<ChatMessage> getMessages(Object memoryId) {
         //从redis中获取会话消息
-        String json = stringRedisTemplate.opsForValue().get(memoryId);
+        String json = stringRedisTemplate.opsForValue().get(memoryId.toString());
+        if (!StringUtils.hasText(json)) {
+            return List.of();
+        }
         //转成对象
-        List<ChatMessage> chatMessages = ChatMessageDeserializer.messagesFromJson(json);
-        return  chatMessages;
+        return ChatMessageDeserializer.messagesFromJson(json);
     }
 
     @Override
