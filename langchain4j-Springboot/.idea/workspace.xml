@@ -5,24 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="952e320d-3542-4543-aeca-9528ab5a59ff" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/AugmentWebviewStateStore.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/copilot.data.migration.ask2agent.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/langchain4j-Springboot.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/controller/TtsController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/service/EdgeTtsService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/AugmentWebviewStateStore.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AugmentWebviewStateStore.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/aiservice/ConsultantService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/config/CommonConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/config/CommonConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/controller/ChatController.java" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/controller/ChatController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/repository/RedisChatMeoryStore.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/consultant/src/main/resources/static/index.html" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,6 +22,9 @@
     <persistenceIdMap>
       <entry key="_D:/practise/Ai/langchain4j-Springboot" value="3AhbivVJ66azPCrbpDwNxDth8s0" />
     </persistenceIdMap>
+  </component>
+  <component name="CopilotUserSelectedChatMode">
+    <option name="chatModeId" value="Agent" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
@@ -84,7 +73,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.completions.CompletionsConfigurable",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -116,7 +105,7 @@
       <option name="presentableId" value="Default" />
       <updated>1773047879512</updated>
       <workItem from="1773047880742" duration="161000" />
-      <workItem from="1773206278609" duration="1856000" />
+      <workItem from="1773206278609" duration="3899000" />
     </task>
     <servers />
   </component>

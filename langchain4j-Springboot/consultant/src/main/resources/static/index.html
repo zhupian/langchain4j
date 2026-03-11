@@ -6,68 +6,343 @@
     <title>AI 顾问助手</title>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: "Microsoft YaHei", Arial, sans-serif; background: linear-gradient(135deg, #eef4ff, #f9fbff); color: #1f2937; }
-        .container { max-width: 960px; margin: 0 auto; min-height: 100vh; padding: 32px 20px; display: flex; flex-direction: column; }
-        .header { text-align: center; margin-bottom: 24px; }
-        .header h1 { margin: 0 0 10px; font-size: 32px; }
-        .header p { margin: 0; color: #6b7280; }
-        .chat-panel { flex: 1; background: rgba(255,255,255,.92); border: 1px solid #e5e7eb; border-radius: 20px; box-shadow: 0 14px 40px rgba(15, 23, 42, .08); padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-        .messages { flex: 1; min-height: 420px; max-height: 65vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; }
-        .message { max-width: 82%; padding: 14px 16px; border-radius: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
-        .message.user { align-self: flex-end; background: #2563eb; color: #fff; border-bottom-right-radius: 6px; }
-        .message.bot { align-self: flex-start; background: #f3f4f6; color: #111827; border-bottom-left-radius: 6px; }
-        .composer { display: flex; gap: 12px; align-items: flex-end; }
-        .composer-actions { display: flex; flex-direction: column; gap: 12px; }
-        textarea { flex: 1; min-height: 88px; max-height: 180px; resize: vertical; border: 1px solid #d1d5db; border-radius: 14px; padding: 14px 16px; font-size: 15px; outline: none; }
-        textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
-        button { min-width: 120px; height: 52px; border: none; border-radius: 14px; background: #2563eb; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: .2s; }
-        button:hover { background: #1d4ed8; transform: translateY(-1px); }
-        button:disabled { background: #93c5fd; cursor: not-allowed; transform: none; }
-        .secondary-button { background: #0f766e; }
-        .secondary-button:hover { background: #0d5f59; }
-        .secondary-button.recording { background: #dc2626; }
-        .secondary-button.recording:hover { background: #b91c1c; }
-        .tips { font-size: 13px; color: #6b7280; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .memory-id { font-family: Consolas, monospace; color: #2563eb; }
-        .speech-status { color: #0f766e; }
-        .speech-status.error { color: #dc2626; }
-        @media (max-width: 768px) {
-            .container { padding: 20px 14px; }
-            .header h1 { font-size: 26px; }
+        :root {
+            color-scheme: light;
+            --bg-1: #eef4ff;
+            --bg-2: #f7f9fc;
+            --card: rgba(255, 255, 255, 0.92);
+            --line: rgba(148, 163, 184, 0.22);
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-strong: #1d4ed8;
+            --accent: #0f766e;
+            --danger: #dc2626;
+            --shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.10), transparent 24%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            color: var(--text);
+        }
+        .page {
+            max-width: 1180px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding: 28px 18px 36px;
+        }
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+        }
+        .hero-title h1 {
+            margin: 10px 0 10px;
+            font-size: 34px;
+            line-height: 1.2;
+        }
+        .hero-title p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+        .badge-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+        .hero-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .tiny-button {
+            height: 40px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.76);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: .2s ease;
+            backdrop-filter: blur(14px);
+        }
+        .tiny-button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08); }
+        .tiny-button.active {
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            border-color: transparent;
+        }
+        .tiny-button.warn {
+            background: rgba(255, 255, 255, 0.82);
+            color: var(--danger);
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        .status-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 16px 18px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+        }
+        .status-card .label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .status-card .value {
+            font-size: 15px;
+            line-height: 1.55;
+            font-weight: 600;
+            word-break: break-word;
+        }
+        .status-card .value.mono {
+            font-family: Consolas, monospace;
+            font-size: 13px;
+            color: var(--primary);
+        }
+        .value.ok { color: var(--accent); }
+        .value.error { color: var(--danger); }
+        .chat-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            backdrop-filter: blur(22px);
+        }
+        .messages {
+            min-height: 460px;
+            max-height: 64vh;
+            overflow-y: auto;
+            padding-right: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .message {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 82%;
+        }
+        .message.user { align-self: flex-end; }
+        .message.bot { align-self: flex-start; }
+        .message-label {
+            font-size: 12px;
+            color: var(--muted);
+            padding: 0 6px;
+        }
+        .message-bubble {
+            padding: 16px 18px;
+            border-radius: 20px;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            word-break: break-word;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        }
+        .message.user .message-bubble {
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            border-bottom-right-radius: 8px;
+        }
+        .message.bot .message-bubble {
+            color: var(--text);
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-bottom-left-radius: 8px;
+        }
+        .composer-card {
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 0.98));
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            padding: 18px;
+        }
+        .composer-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .composer-hint {
+            font-size: 13px;
+            color: var(--muted);
+        }
+        .status-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--primary);
+            font-size: 13px;
+        }
+        .status-inline.error {
+            background: rgba(220, 38, 38, 0.10);
+            color: var(--danger);
+        }
+        .composer-row {
+            display: flex;
+            gap: 14px;
+            align-items: flex-end;
+        }
+        textarea {
+            width: 100%;
+            min-height: 118px;
+            max-height: 220px;
+            resize: none;
+            border-radius: 18px;
+            border: 1px solid #dbe4f0;
+            padding: 16px 18px;
+            font-size: 15px;
+            line-height: 1.7;
+            background: #fff;
+            color: var(--text);
+            outline: none;
+            transition: .2s ease;
+        }
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+        }
+        .composer-actions {
+            width: 180px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .action-button {
+            height: 54px;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s ease;
+        }
+        .action-button:hover { transform: translateY(-1px); }
+        .action-button:disabled {
+            transform: none;
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+        .speech-button {
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), #0f766e);
+        }
+        .speech-button.recording {
+            background: linear-gradient(135deg, var(--danger), #ef4444);
+        }
+        .send-button {
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+        }
+        @media (max-width: 980px) {
+            .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 760px) {
+            .page { padding: 20px 12px 28px; }
+            .hero { flex-direction: column; }
+            .hero-title h1 { font-size: 28px; }
+            .hero-actions { justify-content: flex-start; }
+            .status-grid { grid-template-columns: 1fr; }
+            .chat-card { padding: 16px; border-radius: 22px; }
+            .messages { min-height: 380px; }
             .message { max-width: 100%; }
-            .composer { flex-direction: column; }
+            .composer-row { flex-direction: column; }
             .composer-actions { width: 100%; }
-            button { width: 100%; }
+            .action-button { width: 100%; }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>AI 顾问助手</h1>
-        <p>基于 Spring Boot + LangChain4j 的简洁聊天页面</p>
-    </div>
-
-    <div class="chat-panel">
-        <div id="messages" class="messages">
-            <div class="message bot">你好，我是你的 AI 顾问助手。请输入你想咨询的问题。</div>
+<div class="page">
+    <header class="hero">
+        <div class="hero-title">
+            <div class="badge-row">
+                <span class="badge">🎙 浏览器语音输入</span>
+                <span class="badge">🤖 AI 流式问答</span>
+                <span class="badge">🔊 Edge-TTS 自动朗读</span>
+            </div>
+            <h1>AI 顾问助手</h1>
+            <p>支持语音输入、流式回答和自动朗读，适合做问答演示与顾问助手场景。</p>
         </div>
-
-        <div class="tips">
-            <span>Enter 发送，Shift + Enter 换行，按住 Alt + R 说话</span>
-            <span>当前 memoryId：<span id="memoryIdText" class="memory-id"></span></span>
-            <span>识别语言：<span id="speechLangText">检测中...</span></span>
-            <span id="speechStatus" class="speech-status">语音识别准备中...</span>
+        <div class="hero-actions">
+            <button id="ttsToggleButton" class="tiny-button active" type="button">🔊 AI 朗读已开</button>
+            <button id="stopAudioButton" class="tiny-button warn" type="button" hidden>⏹ 停止朗读</button>
         </div>
+    </header>
 
-        <div class="composer">
-            <textarea id="messageInput" placeholder="例如：请帮我规划一个适合新手的 Java 学习路线"></textarea>
-            <div class="composer-actions">
-                <button id="speechButton" class="secondary-button" type="button">🎙 开始说话</button>
-                <button id="sendButton" type="button">发送消息</button>
+    <section class="status-grid">
+        <div class="status-card">
+            <div class="label">当前会话 ID</div>
+            <div id="memoryIdText" class="value mono">-</div>
+        </div>
+        <div class="status-card">
+            <div class="label">识别语言</div>
+            <div id="speechLangText" class="value">检测中...</div>
+        </div>
+        <div class="status-card">
+            <div class="label">问答状态</div>
+            <div id="chatStatusText" class="value ok">等待你的提问</div>
+        </div>
+        <div class="status-card">
+            <div class="label">朗读状态</div>
+            <div id="audioStatusText" class="value ok">AI 回复后将自动朗读</div>
+        </div>
+    </section>
+
+    <section class="chat-card">
+        <div id="messages" class="messages"></div>
+
+        <div class="composer-card">
+            <div class="composer-top">
+                <div class="composer-hint">Enter 发送，Shift + Enter 换行，Alt + R 可快捷开启语音输入</div>
+                <div id="speechStatus" class="status-inline">语音输入准备中...</div>
+            </div>
+
+            <div class="composer-row">
+                <textarea id="messageInput" placeholder="例如：请帮我规划一个适合新手的 Java 学习路线"></textarea>
+                <div class="composer-actions">
+                    <button id="speechButton" class="action-button speech-button" type="button">🎙 开始说话</button>
+                    <button id="sendButton" class="action-button send-button" type="button">发送消息</button>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 </div>
 
 <script>
@@ -78,9 +353,18 @@
     const memoryIdText = document.getElementById('memoryIdText');
     const speechLangText = document.getElementById('speechLangText');
     const speechStatus = document.getElementById('speechStatus');
+    const chatStatusText = document.getElementById('chatStatusText');
+    const audioStatusText = document.getElementById('audioStatusText');
+    const ttsToggleButton = document.getElementById('ttsToggleButton');
+    const stopAudioButton = document.getElementById('stopAudioButton');
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognitionLanguage = (navigator.language || 'zh-CN').trim();
-    const recognitionSupported = typeof SpeechRecognition === 'function';
+    const speechRecognitionAvailable = typeof SpeechRecognition === 'function';
+    const mediaDevicesAvailable = Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    const recognitionSupported = speechRecognitionAvailable && mediaDevicesAvailable;
+    const recognitionLanguage = normalizeRecognitionLanguage(navigator.language);
+    const pageServedFromFile = window.location.protocol === 'file:';
+    const AUTO_TTS_STORAGE_KEY = 'ai-auto-tts-enabled';
+    const DEFAULT_TTS_VOICE = 'zh-CN-XiaoxiaoNeural';
 
     let recognition = null;
     let isRecognizing = false;
@@ -88,6 +372,12 @@
     let recognizedFinalText = '';
     let speechEndedWithError = false;
     let shortcutSpeechPressed = false;
+    let microphoneReady = false;
+    let speechRetryCount = 0;
+    let pendingRecognitionRetry = false;
+    let currentAudio = null;
+    let currentAudioUrl = '';
+    let autoTtsEnabled = localStorage.getItem(AUTO_TTS_STORAGE_KEY) !== 'false';
 
     function createMemoryId() {
         if (window.crypto && typeof window.crypto.randomUUID === 'function') {
@@ -96,19 +386,41 @@
         return `memory-${Date.now()}`;
     }
 
-    const memoryId = localStorage.getItem('chat-memory-id') || createMemoryId();
-    localStorage.setItem('chat-memory-id', memoryId);
-    memoryIdText.textContent = memoryId;
-    speechLangText.textContent = recognitionLanguage;
+    function normalizeRecognitionLanguage(language) {
+        const raw = (language || 'zh-CN').trim();
+        return raw || 'zh-CN';
+    }
 
     function setSpeechStatus(text, isError = false) {
         speechStatus.textContent = text;
         speechStatus.classList.toggle('error', isError);
     }
 
+    function setChatStatus(text, isError = false) {
+        chatStatusText.textContent = text;
+        chatStatusText.classList.toggle('error', isError);
+        chatStatusText.classList.toggle('ok', !isError);
+    }
+
+    function setAudioStatus(text, isError = false) {
+        audioStatusText.textContent = text;
+        audioStatusText.classList.toggle('error', isError);
+        audioStatusText.classList.toggle('ok', !isError);
+    }
+
     function updateSpeechButton() {
         speechButton.textContent = isRecognizing ? '⏹ 停止识别' : '🎙 开始说话';
         speechButton.classList.toggle('recording', isRecognizing);
+    }
+
+    function updateTtsToggleButton() {
+        ttsToggleButton.textContent = autoTtsEnabled ? '🔊 AI 朗读已开' : '🔇 AI 朗读已关';
+        ttsToggleButton.classList.toggle('active', autoTtsEnabled);
+    }
+
+    function autoResizeTextarea() {
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(input.scrollHeight, 220)}px`;
     }
 
     function buildMergedText(baseText, transcriptText) {
@@ -123,51 +435,162 @@
         return `${normalizedBase}\n${normalizedTranscript}`;
     }
 
-    function stopRecognition() {
-        if (recognition && isRecognizing) {
-            recognition.stop();
+    function scrollMessagesToBottom() {
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function appendMessage(content, role) {
+        const wrapper = document.createElement('div');
+        wrapper.className = `message ${role}`;
+
+        const label = document.createElement('div');
+        label.className = 'message-label';
+        label.textContent = role === 'user' ? '你' : 'AI 顾问';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.textContent = content;
+
+        wrapper.append(label, bubble);
+        messages.appendChild(wrapper);
+        scrollMessagesToBottom();
+        return { wrapper, bubble };
+    }
+
+    function releaseCurrentAudioUrl() {
+        if (currentAudioUrl) {
+            URL.revokeObjectURL(currentAudioUrl);
+            currentAudioUrl = '';
         }
     }
 
-    function startRecognition() {
-        if (!recognitionSupported) {
-            setSpeechStatus('当前浏览器不支持语音识别，建议使用最新版 Chrome。', true);
-            return;
+    function stopAudioPlayback(preserveStatus = false) {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.src = '';
+            currentAudio = null;
         }
-        if (isRecognizing) {
-            return;
+        releaseCurrentAudioUrl();
+        stopAudioButton.hidden = true;
+        if (!preserveStatus) {
+            setAudioStatus(autoTtsEnabled ? 'AI 回复后将自动朗读' : 'AI 朗读已关闭');
         }
-        transcriptBaseText = input.value.trim();
-        recognizedFinalText = '';
-        speechEndedWithError = false;
+    }
+
+    async function safeReadText(response) {
         try {
-            recognition.start();
+            const raw = (await response.text()).trim();
+            if (!raw) {
+                return '';
+            }
+            try {
+                const payload = JSON.parse(raw);
+                return payload.message || raw;
+            } catch (parseError) {
+                return raw;
+            }
         } catch (error) {
-            setSpeechStatus(`无法启动语音识别：${error.message}`, true);
+            return '';
         }
     }
 
-    function toggleRecognition() {
-        if (isRecognizing) {
-            stopRecognition();
+    async function playAssistantReply(text) {
+        if (!autoTtsEnabled || !text) {
             return;
         }
-        startRecognition();
+
+        stopAudioPlayback(true);
+        stopAudioButton.hidden = false;
+        setAudioStatus('正在调用 Edge-TTS 生成语音...');
+
+        try {
+            const response = await fetch('/api/tts/synthesize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text,
+                    voice: DEFAULT_TTS_VOICE,
+                    rate: 0
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await safeReadText(response);
+                throw new Error(errorText || `TTS 请求失败：${response.status}`);
+            }
+
+            const audioBlob = await response.blob();
+            currentAudioUrl = URL.createObjectURL(audioBlob);
+            currentAudio = new Audio(currentAudioUrl);
+
+            currentAudio.onended = () => {
+                stopAudioPlayback(true);
+                setAudioStatus('朗读完成');
+            };
+
+            currentAudio.onerror = () => {
+                stopAudioPlayback(true);
+                setAudioStatus('浏览器音频播放失败，请重试。', true);
+            };
+
+            await currentAudio.play();
+            setAudioStatus('正在朗读 AI 回复...');
+        } catch (error) {
+            stopAudioPlayback(true);
+            setAudioStatus(`AI 朗读失败：${error.message}`, true);
+        }
     }
 
-    if (recognitionSupported) {
-        recognition = new SpeechRecognition();
-        recognition.lang = recognitionLanguage;
-        recognition.continuous = true;
-        recognition.interimResults = true;
+    async function warmupMicrophone() {
+        if (!mediaDevicesAvailable) {
+            throw new Error('当前浏览器不支持麦克风访问');
+        }
+        if (microphoneReady) {
+            return;
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        microphoneReady = true;
+        stream.getTracks().forEach((track) => track.stop());
+    }
 
-        recognition.onstart = () => {
+    function getSpeechErrorMessage(errorCode) {
+        if (errorCode === 'not-allowed' || errorCode === 'service-not-allowed') {
+            return '麦克风权限被拒绝，请允许浏览器访问麦克风。';
+        }
+        if (errorCode === 'no-speech') {
+            return '没有检测到语音，请靠近麦克风后重试。';
+        }
+        if (errorCode === 'audio-capture') {
+            return '没有检测到可用麦克风，请检查录音设备。';
+        }
+        if (errorCode === 'network') {
+            return '语音识别失败：network。这个错误通常来自浏览器内置语音服务，而不是你的后端。请优先使用 Chrome / Edge，并通过 http://localhost 打开页面。';
+        }
+        return `语音识别失败：${errorCode}`;
+    }
+
+    function getBootstrapSpeechErrorMessage(error) {
+        if (error && (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')) {
+            return '无法启动语音输入：麦克风权限被拒绝。';
+        }
+        return `无法启动语音输入：${error.message || '未知错误'}`;
+    }
+
+    function buildRecognitionInstance() {
+        const instance = new SpeechRecognition();
+        instance.lang = recognitionLanguage;
+        instance.continuous = false;
+        instance.interimResults = true;
+        instance.maxAlternatives = 1;
+
+        instance.onstart = () => {
             isRecognizing = true;
+            pendingRecognitionRetry = false;
             updateSpeechButton();
-            setSpeechStatus('正在识别，请开始说话...');
+            setSpeechStatus('正在聆听，请开始说话...');
         };
 
-        recognition.onresult = (event) => {
+        instance.onresult = (event) => {
             let interimText = '';
             for (let index = event.resultIndex; index < event.results.length; index += 1) {
                 const transcript = event.results[index][0].transcript;
@@ -178,75 +601,152 @@
                 }
             }
             input.value = buildMergedText(transcriptBaseText, `${recognizedFinalText} ${interimText}`);
+            autoResizeTextarea();
         };
 
-        recognition.onerror = (event) => {
+        instance.onerror = (event) => {
             isRecognizing = false;
-            speechEndedWithError = true;
             updateSpeechButton();
-            const message = event.error === 'not-allowed'
-                ? '麦克风权限被拒绝，请允许浏览器访问麦克风。'
-                : `语音识别失败：${event.error}`;
-            setSpeechStatus(message, true);
-        };
 
-        recognition.onend = () => {
-            isRecognizing = false;
-            updateSpeechButton();
-            if (!speechEndedWithError) {
-                setSpeechStatus(recognizedFinalText.trim() ? '识别完成，已回填到输入框。' : '识别已停止，可以重新开始。');
+            if (event.error === 'aborted') {
+                speechEndedWithError = false;
+                setSpeechStatus('语音输入已停止。');
+                return;
             }
-            speechEndedWithError = false;
+
+            if (event.error === 'network' && speechRetryCount < 1) {
+                speechRetryCount += 1;
+                speechEndedWithError = false;
+                pendingRecognitionRetry = true;
+                setSpeechStatus('语音服务连接不稳定，正在自动重试...');
+                window.setTimeout(() => {
+                    startRecognition({ retrying: true }).catch(() => {});
+                }, 700);
+                return;
+            }
+
+            speechEndedWithError = true;
+            setSpeechStatus(getSpeechErrorMessage(event.error), true);
+        };
+
+        instance.onend = () => {
+            isRecognizing = false;
+            updateSpeechButton();
+            if (pendingRecognitionRetry) {
+                return;
+            }
+            if (!speechEndedWithError) {
+                setSpeechStatus(recognizedFinalText.trim() ? '识别完成，已回填到输入框。' : '语音输入已结束。');
+            }
             input.focus();
         };
 
-        setSpeechStatus('语音识别就绪，点击按钮或按住 Alt + R 开始。');
-    } else {
-        speechButton.disabled = true;
-        setSpeechStatus('当前浏览器不支持语音识别，建议使用最新版 Chrome。', true);
+        return instance;
     }
 
-    function appendMessage(content, role) {
-        const div = document.createElement('div');
-        div.className = `message ${role}`;
-        div.textContent = content;
-        messages.appendChild(div);
-        messages.scrollTop = messages.scrollHeight;
-        return div;
+    function stopRecognition() {
+        pendingRecognitionRetry = false;
+        if (recognition) {
+            speechEndedWithError = false;
+            try {
+                recognition.stop();
+            } catch (error) {
+                // ignore
+            }
+        }
+    }
+
+    async function startRecognition({ retrying = false } = {}) {
+        if (!recognitionSupported) {
+            setSpeechStatus('当前浏览器不支持语音输入，建议使用最新版 Chrome / Edge。', true);
+            return;
+        }
+        if (pageServedFromFile) {
+            setSpeechStatus('请通过 Spring Boot 地址打开页面，不要直接双击 HTML 文件。', true);
+            return;
+        }
+        if (isRecognizing) {
+            return;
+        }
+
+        if (!retrying) {
+            transcriptBaseText = input.value.trim();
+            recognizedFinalText = '';
+            speechRetryCount = 0;
+        }
+
+        speechEndedWithError = false;
+        pendingRecognitionRetry = false;
+        setSpeechStatus(retrying ? '正在重新连接语音服务...' : '正在准备麦克风...');
+
+        try {
+            await warmupMicrophone();
+            recognition = buildRecognitionInstance();
+            await new Promise((resolve) => window.setTimeout(resolve, 160));
+            recognition.start();
+        } catch (error) {
+            setSpeechStatus(getBootstrapSpeechErrorMessage(error), true);
+        }
+    }
+
+    function toggleRecognition() {
+        if (isRecognizing) {
+            stopRecognition();
+            return;
+        }
+        startRecognition().catch(() => {});
     }
 
     async function sendMessage() {
         const text = input.value.trim();
-        if (!text || sendButton.disabled) return;
+        if (!text || sendButton.disabled) {
+            return;
+        }
 
         stopRecognition();
+        stopAudioPlayback(true);
 
         appendMessage(text, 'user');
         input.value = '';
+        autoResizeTextarea();
         sendButton.disabled = true;
         speechButton.disabled = true;
+        setChatStatus('AI 正在思考并生成回复...');
 
         const botMessage = appendMessage('思考中...', 'bot');
+        let answerText = '';
+        const startTime = performance.now();
 
         try {
             const query = new URLSearchParams({ memoryId, message: text }).toString();
             const response = await fetch(`/chat?${query}`);
             if (!response.ok || !response.body) {
-                throw new Error(`请求失败：${response.status}`);
+                const errorText = await safeReadText(response);
+                throw new Error(errorText || `请求失败：${response.status}`);
             }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder('utf-8');
-            botMessage.textContent = '';
+            botMessage.bubble.textContent = '';
 
             while (true) {
                 const { value, done } = await reader.read();
-                if (done) break;
-                botMessage.textContent += decoder.decode(value, { stream: true });
-                messages.scrollTop = messages.scrollHeight;
+                if (done) {
+                    break;
+                }
+                answerText += decoder.decode(value, { stream: true });
+                botMessage.bubble.textContent = answerText;
+                scrollMessagesToBottom();
             }
+
+            answerText += decoder.decode();
+            const finalText = answerText.trim() || '暂时没有生成内容，请稍后再试。';
+            botMessage.bubble.textContent = finalText;
+            setChatStatus(`回复完成，用时 ${((performance.now() - startTime) / 1000).toFixed(1)} 秒`);
+            void playAssistantReply(finalText);
         } catch (error) {
-            botMessage.textContent = `请求出错：${error.message}`;
+            botMessage.bubble.textContent = `请求出错：${error.message}`;
+            setChatStatus('本次请求失败', true);
         } finally {
             sendButton.disabled = false;
             speechButton.disabled = !recognitionSupported;
@@ -254,8 +754,47 @@
         }
     }
 
+    const memoryId = localStorage.getItem('chat-memory-id') || createMemoryId();
+    localStorage.setItem('chat-memory-id', memoryId);
+    memoryIdText.textContent = memoryId;
+    speechLangText.textContent = recognitionSupported ? recognitionLanguage : '浏览器不支持';
+    updateTtsToggleButton();
+    updateSpeechButton();
+    setChatStatus('等待你的提问');
+    setAudioStatus(autoTtsEnabled ? 'AI 回复后将自动朗读' : 'AI 朗读已关闭');
+    autoResizeTextarea();
+    appendMessage('你好，我是你的 AI 顾问助手。你可以直接打字，也可以点击“开始说话”进行语音输入。', 'bot');
+
+    if (pageServedFromFile) {
+        speechButton.disabled = true;
+        setSpeechStatus('请通过 Spring Boot 地址打开页面，不要直接双击 HTML 文件。', true);
+    } else if (recognitionSupported) {
+        setSpeechStatus('语音输入就绪，首次使用会请求麦克风权限。');
+    } else {
+        speechButton.disabled = true;
+        setSpeechStatus('当前浏览器不支持语音输入，建议使用最新版 Chrome / Edge。', true);
+    }
+
+    ttsToggleButton.addEventListener('click', () => {
+        autoTtsEnabled = !autoTtsEnabled;
+        localStorage.setItem(AUTO_TTS_STORAGE_KEY, String(autoTtsEnabled));
+        updateTtsToggleButton();
+        if (!autoTtsEnabled) {
+            stopAudioPlayback();
+            setAudioStatus('AI 朗读已关闭');
+            return;
+        }
+        setAudioStatus('AI 回复后将自动朗读');
+    });
+
+    stopAudioButton.addEventListener('click', () => {
+        stopAudioPlayback(true);
+        setAudioStatus('已停止朗读');
+    });
+
     speechButton.addEventListener('click', toggleRecognition);
     sendButton.addEventListener('click', sendMessage);
+    input.addEventListener('input', autoResizeTextarea);
     input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -270,7 +809,7 @@
         if (event.altKey && event.key.toLowerCase() === 'r') {
             event.preventDefault();
             shortcutSpeechPressed = true;
-            startRecognition();
+            startRecognition().catch(() => {});
         }
     });
 
@@ -285,6 +824,10 @@
     window.addEventListener('blur', () => {
         shortcutSpeechPressed = false;
         stopRecognition();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        stopAudioPlayback(true);
     });
 </script>
 </body>
