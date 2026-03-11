@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AugmentWebviewStateStore">
+    <option name="stateMap">
+      <map>
+        <entry key="CHAT_STATE" value="[[&quot;currentConversationId&quot;,&quot;pins&quot;,&quot;agentExecutionMode&quot;,&quot;isPanelCollapsed&quot;,&quot;displayedAnnouncements&quot;,&quot;conversations&quot;,&quot;onboarding&quot;,&quot;a|0|1|2|3|4|5|6&quot;,&quot;__NEW_AGENT__&quot;,&quot;o|&quot;,&quot;manual&quot;,&quot;b|F&quot;,&quot;a|&quot;,&quot;a|8&quot;,&quot;id&quot;,&quot;createdAtIso&quot;,&quot;lastInteractedAtIso&quot;,&quot;selectedModelId&quot;,&quot;requestIds&quot;,&quot;isPinned&quot;,&quot;isShareable&quot;,&quot;extraData&quot;,&quot;personaType&quot;,&quot;rootTaskUuid&quot;,&quot;toolUseStates&quot;,&quot;chatHistory&quot;,&quot;feedbackStates&quot;,&quot;draftExchange&quot;,&quot;a|E|F|G|H|I|J|K|L|M|N|O|P|Q|R&quot;,&quot;2026-03-09T09:07:01.001Z&quot;,&quot;gpt-5-4&quot;,&quot;isAgentConversation&quot;,&quot;a|V&quot;,&quot;b|T&quot;,&quot;o|W|X&quot;,&quot;n|0&quot;,&quot;96de49a2-008c-4ec4-9567-5bcb67b92a58&quot;,&quot;request_message&quot;,&quot;rich_text_json_repr&quot;,&quot;status&quot;,&quot;a|b|c|d&quot;,&quot;&quot;,&quot;type&quot;,&quot;content&quot;,&quot;a|g|h&quot;,&quot;doc&quot;,&quot;a|g&quot;,&quot;paragraph&quot;,&quot;o|k|l&quot;,&quot;a|m&quot;,&quot;o|i|j|n&quot;,&quot;draft&quot;,&quot;o|e|f|o|p&quot;,&quot;o|S|8|T|T|U|C|B|B|Y|Z|a|9|C|9|q&quot;,&quot;o|D|r&quot;,&quot;shown&quot;,&quot;workspaceQuestions&quot;,&quot;a|t|u&quot;,&quot;o|v|B|C&quot;,&quot;o|7|8|9|A|B|C|s|w&quot;],&quot;x&quot;]" />
+      </map>
+    </option>
+  </component>
+</project>
