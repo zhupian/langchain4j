@@ -293,12 +293,12 @@
     <header class="hero">
         <div class="hero-title">
             <div class="badge-row">
-                <span class="badge">🎙 浏览器语音输入</span>
+                <span class="badge">🎙 后端 STT 录音转写</span>
                 <span class="badge">🤖 AI 流式问答</span>
                 <span class="badge">🔊 Edge-TTS 自动朗读</span>
             </div>
             <h1>AI 顾问助手</h1>
-            <p>支持语音输入、流式回答和自动朗读，适合做问答演示与顾问助手场景。</p>
+            <p>支持浏览器录音上传、后端 Whisper/OpenAI 兼容 STT、流式回答和自动朗读。</p>
         </div>
         <div class="hero-actions">
             <button id="ttsToggleButton" class="tiny-button active" type="button">🔊 AI 朗读已开</button>
@@ -312,7 +312,7 @@
             <div id="memoryIdText" class="value mono">-</div>
         </div>
         <div class="status-card">
-            <div class="label">识别语言</div>
+            <div class="label">识别模式</div>
             <div id="speechLangText" class="value">检测中...</div>
         </div>
         <div class="status-card">
@@ -330,14 +330,14 @@
 
         <div class="composer-card">
             <div class="composer-top">
-                <div class="composer-hint">Enter 发送，Shift + Enter 换行，Alt + R 可快捷开启语音输入</div>
-                <div id="speechStatus" class="status-inline">语音输入准备中...</div>
+                <div class="composer-hint">Enter 发送，Shift + Enter 换行，Alt + R 可快捷开始/结束录音</div>
+                <div id="speechStatus" class="status-inline">录音转写准备中...</div>
             </div>
 
             <div class="composer-row">
                 <textarea id="messageInput" placeholder="例如：请帮我规划一个适合新手的 Java 学习路线"></textarea>
                 <div class="composer-actions">
-                    <button id="speechButton" class="action-button speech-button" type="button">🎙 开始说话</button>
+                    <button id="speechButton" class="action-button speech-button" type="button">🎙 开始录音</button>
                     <button id="sendButton" class="action-button send-button" type="button">发送消息</button>
                 </div>
             </div>
@@ -360,14 +360,25 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const speechRecognitionAvailable = typeof SpeechRecognition === 'function';
     const mediaDevicesAvailable = Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-    const recognitionSupported = speechRecognitionAvailable && mediaDevicesAvailable;
+    const mediaRecorderAvailable = typeof window.MediaRecorder === 'function';
+    const backendSttSupported = mediaRecorderAvailable && mediaDevicesAvailable;
+    const browserRecognitionSupported = speechRecognitionAvailable && mediaDevicesAvailable;
+    const voiceInputSupported = backendSttSupported || browserRecognitionSupported;
     const recognitionLanguage = normalizeRecognitionLanguage(navigator.language);
     const pageServedFromFile = window.location.protocol === 'file:';
     const AUTO_TTS_STORAGE_KEY = 'ai-auto-tts-enabled';
     const DEFAULT_TTS_VOICE = 'zh-CN-XiaoxiaoNeural';
+    const DEFAULT_STT_LANGUAGE = 'zh';
+    const DEFAULT_STT_PROMPT = '请将语音准确转写为简体中文文本。';
 
     let recognition = null;
+    let mediaRecorder = null;
+    let recordingStream = null;
+    let recordedChunks = [];
+    let activeRecordingMimeType = '';
     let isRecognizing = false;
+    let isRecording = false;
+    let isTranscribing = false;
     let transcriptBaseText = '';
     let recognizedFinalText = '';
     let speechEndedWithError = false;
@@ -408,9 +419,31 @@
         audioStatusText.classList.toggle('ok', !isError);
     }
 
+    function getSpeechModeText() {
+        if (backendSttSupported) {
+            return `${DEFAULT_STT_LANGUAGE}（后端 STT 优先）`;
+        }
+        if (browserRecognitionSupported) {
+            return `${recognitionLanguage}（浏览器识别兜底）`;
+        }
+        return '浏览器不支持';
+    }
+
     function updateSpeechButton() {
-        speechButton.textContent = isRecognizing ? '⏹ 停止识别' : '🎙 开始说话';
-        speechButton.classList.toggle('recording', isRecognizing);
+        if (isTranscribing) {
+            speechButton.textContent = '⏳ 转写中...';
+        } else if (isRecording) {
+            speechButton.textContent = '⏹ 结束录音';
+        } else if (isRecognizing) {
+            speechButton.textContent = '⏹ 停止识别';
+        } else if (backendSttSupported) {
+            speechButton.textContent = '🎙 开始录音';
+        } else {
+            speechButton.textContent = '🎙 开始说话';
+        }
+
+        speechButton.classList.toggle('recording', isRecording || isRecognizing);
+        speechButton.disabled = pageServedFromFile || !voiceInputSupported || sendButton.disabled || isTranscribing;
     }
 
     function updateTtsToggleButton() {
@@ -477,6 +510,14 @@
         }
     }
 
+    function stopMicrophoneStream() {
+        if (!recordingStream) {
+            return;
+        }
+        recordingStream.getTracks().forEach((track) => track.stop());
+        recordingStream = null;
+    }
+
     async function safeReadText(response) {
         try {
             const raw = (await response.text()).trim();
@@ -485,7 +526,13 @@
             }
             try {
                 const payload = JSON.parse(raw);
-                return payload.message || raw;
+                if (payload.message) {
+                    return payload.message;
+                }
+                if (payload.error && payload.error.message) {
+                    return payload.error.message;
+                }
+                return raw;
             } catch (parseError) {
                 return raw;
             }
@@ -564,16 +611,162 @@
             return '没有检测到可用麦克风，请检查录音设备。';
         }
         if (errorCode === 'network') {
-            return '语音识别失败：network。这个错误通常来自浏览器内置语音服务，而不是你的后端。请优先使用 Chrome / Edge，并通过 http://localhost 打开页面。';
+            return '浏览器内置识别失败：network。当前页面会优先使用后端 STT，若仍走到这里，说明浏览器录音不可用。';
         }
         return `语音识别失败：${errorCode}`;
     }
 
     function getBootstrapSpeechErrorMessage(error) {
         if (error && (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')) {
-            return '无法启动语音输入：麦克风权限被拒绝。';
+            return '无法启动录音：麦克风权限被拒绝。';
         }
-        return `无法启动语音输入：${error.message || '未知错误'}`;
+        return `无法启动录音：${error && error.message ? error.message : '未知错误'}`;
+    }
+
+    function getPreferredRecordingMimeType() {
+        const candidates = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus',
+            'audio/mp4'
+        ];
+        for (const candidate of candidates) {
+            if (window.MediaRecorder && MediaRecorder.isTypeSupported(candidate)) {
+                return candidate;
+            }
+        }
+        return '';
+    }
+
+    function guessAudioExtension(mimeType) {
+        if (!mimeType) {
+            return 'webm';
+        }
+        if (mimeType.includes('ogg')) {
+            return 'ogg';
+        }
+        if (mimeType.includes('mp4')) {
+            return 'mp4';
+        }
+        return 'webm';
+    }
+
+    async function uploadAudioForTranscription(audioBlob, mimeType) {
+        isTranscribing = true;
+        updateSpeechButton();
+        setSpeechStatus('录音结束，正在上传到后端 STT 转写...');
+
+        try {
+            const formData = new FormData();
+            formData.append('file', audioBlob, `speech-${Date.now()}.${guessAudioExtension(mimeType)}`);
+            formData.append('language', DEFAULT_STT_LANGUAGE);
+            formData.append('prompt', DEFAULT_STT_PROMPT);
+
+            const response = await fetch('/api/stt/transcribe', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await safeReadText(response);
+                throw new Error(errorText || `STT 请求失败：${response.status}`);
+            }
+
+            const payload = await response.json();
+            const transcriptText = (payload.text || '').trim();
+            if (!transcriptText) {
+                throw new Error('后端 STT 未返回识别文本');
+            }
+
+            input.value = buildMergedText(transcriptBaseText, transcriptText);
+            autoResizeTextarea();
+            setSpeechStatus('转写完成，已回填到输入框。');
+            input.focus();
+        } catch (error) {
+            setSpeechStatus(`后端转写失败：${error.message}`, true);
+        } finally {
+            isTranscribing = false;
+            updateSpeechButton();
+        }
+    }
+
+    async function startBackendRecording() {
+        if (!backendSttSupported || isRecording || isTranscribing) {
+            return;
+        }
+
+        transcriptBaseText = input.value.trim();
+        recordedChunks = [];
+        activeRecordingMimeType = getPreferredRecordingMimeType();
+        setSpeechStatus('正在打开麦克风并开始录音...');
+
+        try {
+            recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            microphoneReady = true;
+
+            const recorder = activeRecordingMimeType
+                ? new MediaRecorder(recordingStream, { mimeType: activeRecordingMimeType })
+                : new MediaRecorder(recordingStream);
+            const finalMimeType = recorder.mimeType || activeRecordingMimeType || 'audio/webm';
+
+            recorder.onstart = () => {
+                isRecording = true;
+                updateSpeechButton();
+                setSpeechStatus('录音中，再点一次按钮即可结束并自动转写...');
+            };
+
+            recorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            recorder.onerror = (event) => {
+                isRecording = false;
+                mediaRecorder = null;
+                stopMicrophoneStream();
+                updateSpeechButton();
+                const errorMessage = event.error && event.error.message ? event.error.message : '未知错误';
+                setSpeechStatus(`录音失败：${errorMessage}`, true);
+            };
+
+            recorder.onstop = async () => {
+                mediaRecorder = null;
+                isRecording = false;
+                stopMicrophoneStream();
+                updateSpeechButton();
+
+                const audioBlob = new Blob(recordedChunks, { type: finalMimeType });
+                recordedChunks = [];
+                if (!audioBlob.size) {
+                    setSpeechStatus('没有录到有效音频，请重试。', true);
+                    return;
+                }
+                await uploadAudioForTranscription(audioBlob, finalMimeType);
+            };
+
+            mediaRecorder = recorder;
+            recorder.start();
+        } catch (error) {
+            mediaRecorder = null;
+            stopMicrophoneStream();
+            setSpeechStatus(getBootstrapSpeechErrorMessage(error), true);
+            updateSpeechButton();
+        }
+    }
+
+    function stopBackendRecording() {
+        if (!mediaRecorder || !isRecording) {
+            return;
+        }
+        try {
+            mediaRecorder.stop();
+        } catch (error) {
+            stopMicrophoneStream();
+            isRecording = false;
+            mediaRecorder = null;
+            updateSpeechButton();
+        }
     }
 
     function buildRecognitionInstance() {
@@ -587,7 +780,7 @@
             isRecognizing = true;
             pendingRecognitionRetry = false;
             updateSpeechButton();
-            setSpeechStatus('正在聆听，请开始说话...');
+            setSpeechStatus('浏览器识别已启动，请开始说话...');
         };
 
         instance.onresult = (event) => {
@@ -610,7 +803,7 @@
 
             if (event.error === 'aborted') {
                 speechEndedWithError = false;
-                setSpeechStatus('语音输入已停止。');
+                setSpeechStatus('浏览器识别已停止。');
                 return;
             }
 
@@ -618,7 +811,7 @@
                 speechRetryCount += 1;
                 speechEndedWithError = false;
                 pendingRecognitionRetry = true;
-                setSpeechStatus('语音服务连接不稳定，正在自动重试...');
+                setSpeechStatus('浏览器语音服务连接不稳定，正在重试一次...');
                 window.setTimeout(() => {
                     startRecognition({ retrying: true }).catch(() => {});
                 }, 700);
@@ -636,7 +829,7 @@
                 return;
             }
             if (!speechEndedWithError) {
-                setSpeechStatus(recognizedFinalText.trim() ? '识别完成，已回填到输入框。' : '语音输入已结束。');
+                setSpeechStatus(recognizedFinalText.trim() ? '识别完成，已回填到输入框。' : '浏览器识别已结束。');
             }
             input.focus();
         };
@@ -657,15 +850,15 @@
     }
 
     async function startRecognition({ retrying = false } = {}) {
-        if (!recognitionSupported) {
-            setSpeechStatus('当前浏览器不支持语音输入，建议使用最新版 Chrome / Edge。', true);
+        if (!browserRecognitionSupported) {
+            setSpeechStatus('当前浏览器无法使用语音识别，请优先使用后端 STT 录音转写。', true);
             return;
         }
         if (pageServedFromFile) {
             setSpeechStatus('请通过 Spring Boot 地址打开页面，不要直接双击 HTML 文件。', true);
             return;
         }
-        if (isRecognizing) {
+        if (isRecognizing || isTranscribing) {
             return;
         }
 
@@ -677,7 +870,7 @@
 
         speechEndedWithError = false;
         pendingRecognitionRetry = false;
-        setSpeechStatus(retrying ? '正在重新连接语音服务...' : '正在准备麦克风...');
+        setSpeechStatus(retrying ? '正在重新连接浏览器语音服务...' : '正在准备浏览器语音识别...');
 
         try {
             await warmupMicrophone();
@@ -689,7 +882,32 @@
         }
     }
 
+    function stopVoiceInput() {
+        if (isRecording) {
+            stopBackendRecording();
+            return;
+        }
+        if (isRecognizing) {
+            stopRecognition();
+        }
+    }
+
     function toggleRecognition() {
+        if (pageServedFromFile) {
+            setSpeechStatus('请通过 Spring Boot 地址打开页面，不要直接双击 HTML 文件。', true);
+            return;
+        }
+        if (isTranscribing) {
+            return;
+        }
+        if (backendSttSupported) {
+            if (isRecording) {
+                stopBackendRecording();
+                return;
+            }
+            startBackendRecording().catch(() => {});
+            return;
+        }
         if (isRecognizing) {
             stopRecognition();
             return;
@@ -698,6 +916,11 @@
     }
 
     async function sendMessage() {
+        if (isRecording || isTranscribing) {
+            setSpeechStatus('请先结束录音并等待转写完成，再发送消息。', true);
+            return;
+        }
+
         const text = input.value.trim();
         if (!text || sendButton.disabled) {
             return;
@@ -710,7 +933,7 @@
         input.value = '';
         autoResizeTextarea();
         sendButton.disabled = true;
-        speechButton.disabled = true;
+        updateSpeechButton();
         setChatStatus('AI 正在思考并生成回复...');
 
         const botMessage = appendMessage('思考中...', 'bot');
@@ -749,7 +972,7 @@
             setChatStatus('本次请求失败', true);
         } finally {
             sendButton.disabled = false;
-            speechButton.disabled = !recognitionSupported;
+            updateSpeechButton();
             input.focus();
         }
     }
@@ -757,22 +980,22 @@
     const memoryId = localStorage.getItem('chat-memory-id') || createMemoryId();
     localStorage.setItem('chat-memory-id', memoryId);
     memoryIdText.textContent = memoryId;
-    speechLangText.textContent = recognitionSupported ? recognitionLanguage : '浏览器不支持';
+    speechLangText.textContent = getSpeechModeText();
     updateTtsToggleButton();
     updateSpeechButton();
     setChatStatus('等待你的提问');
     setAudioStatus(autoTtsEnabled ? 'AI 回复后将自动朗读' : 'AI 朗读已关闭');
     autoResizeTextarea();
-    appendMessage('你好，我是你的 AI 顾问助手。你可以直接打字，也可以点击“开始说话”进行语音输入。', 'bot');
+    appendMessage('你好，我是你的 AI 顾问助手。你可以直接打字，也可以点击“开始录音”进行后端转写。', 'bot');
 
     if (pageServedFromFile) {
-        speechButton.disabled = true;
         setSpeechStatus('请通过 Spring Boot 地址打开页面，不要直接双击 HTML 文件。', true);
-    } else if (recognitionSupported) {
-        setSpeechStatus('语音输入就绪，首次使用会请求麦克风权限。');
+    } else if (backendSttSupported) {
+        setSpeechStatus('后端 STT 录音转写就绪：点击“开始录音”，结束后会自动上传并回填文本。');
+    } else if (browserRecognitionSupported) {
+        setSpeechStatus('当前浏览器将退回到内置语音识别模式。');
     } else {
-        speechButton.disabled = true;
-        setSpeechStatus('当前浏览器不支持语音输入，建议使用最新版 Chrome / Edge。', true);
+        setSpeechStatus('当前浏览器既不支持录音也不支持语音识别，建议使用最新版 Chrome / Edge。', true);
     }
 
     ttsToggleButton.addEventListener('click', () => {
@@ -809,7 +1032,7 @@
         if (event.altKey && event.key.toLowerCase() === 'r') {
             event.preventDefault();
             shortcutSpeechPressed = true;
-            startRecognition().catch(() => {});
+            toggleRecognition();
         }
     });
 
@@ -817,17 +1040,18 @@
         const isSpeechShortcutKey = event.key.toLowerCase() === 'r' || event.key === 'Alt';
         if (shortcutSpeechPressed && isSpeechShortcutKey) {
             shortcutSpeechPressed = false;
-            stopRecognition();
+            stopVoiceInput();
         }
     });
 
     window.addEventListener('blur', () => {
         shortcutSpeechPressed = false;
-        stopRecognition();
+        stopVoiceInput();
     });
 
     window.addEventListener('beforeunload', () => {
         stopAudioPlayback(true);
+        stopMicrophoneStream();
     });
 </script>
 </body>

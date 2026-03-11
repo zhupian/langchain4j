@@ -53,4 +53,24 @@ class TtsControllerTest {
 
         verifyNoInteractions(edgeTtsService);
     }
+
+    @Test
+    void shouldReturnServerErrorWhenSynthesizeFails() throws Exception {
+        EdgeTtsService edgeTtsService = mock(EdgeTtsService.class);
+        when(edgeTtsService.synthesize("你好", "zh-CN-XiaoxiaoNeural", 0))
+                .thenThrow(new RuntimeException("语音合成失败：Edge 服务拒绝连接（403 Forbidden）"));
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new TtsController(edgeTtsService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        mockMvc.perform(post("/api/tts/synthesize")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"text":"你好","voice":"zh-CN-XiaoxiaoNeural","rate":0}
+                                """))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.message").value("语音合成失败：Edge 服务拒绝连接（403 Forbidden）"));
+    }
 }

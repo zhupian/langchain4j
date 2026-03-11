@@ -2,14 +2,14 @@ langchain4j:
   open-ai:
     chat-model:
       api-key: ${API-KEY}
-      base-url: http://localhost:11434/v1
-      model-name: qwen3.5:0.8b
+      base-url: https://api.deepseek.com/v1
+      model-name: deepseek-chat
       log-requests: true
       log-responses: true
     streaming-chat-model:
       api-key: ${API-KEY}
-      base-url: http://localhost:11434/v1
-      model-name: qwen3.5:0.8b
+      base-url: https://api.deepseek.com/v1
+      model-name: deepseek-chat
       log-requests: true
       log-responses: true
 logging:
@@ -22,3 +22,11 @@ spring:
       port: 6379
       password: 123456
       database: 2
+app:
+  stt:
+    enabled: true
+    base-url: ${AI_STT_BASE_URL:${langchain4j.open-ai.chat-model.base-url}}
+    api-key: ${AI_STT_API_KEY:${API-KEY}}
+    model-name: ${AI_STT_MODEL_NAME:whisper-1}
+    default-language: ${AI_STT_LANGUAGE:zh}
+    default-prompt: ${AI_STT_PROMPT:}

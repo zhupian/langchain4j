@@ -6,9 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="952e320d-3542-4543-aeca-9528ab5a59ff" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/AugmentWebviewStateStore.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AugmentWebviewStateStore.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/src/main/resources/static/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/service/EdgeTtsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/service/EdgeTtsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/consultant/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/consultant/src/main/resources/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/main/resources/static/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/consultant/src/test/java/com/jiang/consultant/controller/TtsControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/test/java/com/jiang/consultant/controller/TtsControllerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,7 +64,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Spring Boot.ConsultantApplication.executor": "JRebel Executor",
+    "Spring Boot.ConsultantApplication.executor": "Run",
     "augment.onboarding.workspace.first.indexed.D:/code/Ai/langchain4j-SpringBoot": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
@@ -73,7 +75,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.github.copilot.settings.completions.CompletionsConfigurable",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -105,7 +107,7 @@
       <option name="presentableId" value="Default" />
       <updated>1773047879512</updated>
       <workItem from="1773047880742" duration="161000" />
-      <workItem from="1773206278609" duration="3899000" />
+      <workItem from="1773206278609" duration="6254000" />
     </task>
     <servers />
   </component>
