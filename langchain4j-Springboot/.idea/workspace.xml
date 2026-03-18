@@ -5,12 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="952e320d-3542-4543-aeca-9528ab5a59ff" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/AugmentWebviewStateStore.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AugmentWebviewStateStore.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/service/EdgeTtsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/main/java/com/jiang/consultant/service/EdgeTtsService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/consultant/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/src/main/resources/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/main/resources/static/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/consultant/src/test/java/com/jiang/consultant/controller/TtsControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/consultant/src/test/java/com/jiang/consultant/controller/TtsControllerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,14 +37,26 @@
     &quot;assignee&quot;: &quot;zhupian&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/zhupian/langchain4j.git",
-    "accountId": "10032b94-6eb1-4b7e-a0b0-689abaf03ca3"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/zhupian/langchain4j.git&quot;,
+    &quot;accountId&quot;: &quot;10032b94-6eb1-4b7e-a0b0-689abaf03ca3&quot;
   }
-}]]></component>
+}</component>
   <component name="JRebelWorkspace">
     <option name="jrebelEnabledAutocompile" value="true" />
+  </component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="localRepository" value="D:\maven\apache-maven-3.9.13-bin\Repository" />
+        <option name="userSettingsFile" value="D:\maven\apache-maven-3.9.13-bin\apache-maven-3.9.13\conf\settings.xml" />
+      </MavenGeneralSettings>
+    </option>
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6
@@ -62,10 +74,13 @@
     "RequestMappingsPanelWidth0": "75",
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.ConsultantApplication.executor": "Run",
     "augment.onboarding.workspace.first.indexed.D:/code/Ai/langchain4j-SpringBoot": "true",
+    "augment.onboarding.workspace.first.indexed.D:/practise/Ai/langchain4j-Springboot": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
@@ -75,7 +90,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "settings.editor.selected.configurable": "MavenSettings",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -94,8 +109,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.28539.33" />
-        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-IU-252.28539.33" />
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.31033.145" />
       </set>
     </attachedChunks>
   </component>
@@ -107,7 +122,12 @@
       <option name="presentableId" value="Default" />
       <updated>1773047879512</updated>
       <workItem from="1773047880742" duration="161000" />
-      <workItem from="1773206278609" duration="6254000" />
+      <workItem from="1773206278609" duration="6708000" />
+      <workItem from="1773214563881" duration="48000" />
+      <workItem from="1773223405846" duration="28000" />
+      <workItem from="1773619884915" duration="485000" />
+      <workItem from="1773808215288" duration="1038000" />
+      <workItem from="1773810300623" duration="5336000" />
     </task>
     <servers />
   </component>
